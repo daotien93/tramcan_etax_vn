@@ -53,7 +53,6 @@ npm install
 npm run dev
 ```
 
-Mở [http://localhost:5173](http://localhost:5173). API được proxy qua `/api` (xem `web/vite.config.ts`).
 
 ### 2. Backend API
 
@@ -82,15 +81,6 @@ npm run dev:api
 |------|--------|
 | `api/.env.example` → `.env` | `DATABASE_URL`, `WEB_ORIGIN` (CORS) |
 | `web/.env.example` | `VITE_API_URL` (tham chiếu; dev dùng proxy) |
-
-## Tài khoản đăng nhập (demo)
-
-| User | Mật khẩu | Quyền |
-|------|----------|--------|
-| `admin` | `admin123` | Vào được **Dashboard** |
-| `user` | `user123` | Không vào Dashboard; các trang khác |
-
-Phiên lưu `localStorage` (key `tramcan_auth_v1`).
 
 ## Script hữu ích
 
