@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.*.local
+api/.env
+web/.env
+*.log
+.DS_Store
+api/coverage/
+web/dist/
+api/.prisma-cache/

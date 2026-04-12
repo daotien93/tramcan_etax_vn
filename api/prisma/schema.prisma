@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  owner
+  accountant
+}
+
+enum TransactionType {
+  income
+  expense
+}
+
+enum TransactionCategory {
+  service
+  trading
+  other
+}
+
+enum PaymentMethod {
+  bank
+  cash
+}
+
+enum DocumentType {
+  contract
+  invoice
+  receipt
+}
+
+enum InvoiceStatus {
+  draft
+  issued
+  cancelled
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String?  @map("password_hash")
+  fullName     String?  @map("full_name")
+  role         UserRole @default(owner)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  businessProfile BusinessProfile?
+
+  @@map("users")
+}
+
+model BusinessProfile {
+  id             String   @id @default(uuid()) @db.Uuid
+  ownerUserId    String   @unique @map("owner_user_id") @db.Uuid
+  businessName   String   @map("business_name")
+  taxCode        String   @map("tax_code")
+  ownerName      String   @map("owner_name")
+  cccdNumber     String?  @map("cccd_number")
+  licenseFileUrl String?  @map("license_file_url")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  owner        User          @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  bankAccounts BankAccount[]
+  transactions Transaction[]
+
+  @@map("business_profile")
+}
+
+model BankAccount {
+  id                String   @id @default(uuid()) @db.Uuid
+  businessProfileId String   @map("business_profile_id") @db.Uuid
+  bankName          String   @map("bank_name")
+  accountNumber     String   @map("account_number")
+  ownerName         String   @map("owner_name")
+  isPrimary         Boolean  @default(false) @map("is_primary")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  businessProfile BusinessProfile     @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+  statementLines  BankStatementLine[]
+
+  @@map("bank_accounts")
+}
+
+model Transaction {
+  id                String              @id @default(uuid()) @db.Uuid
+  businessProfileId String              @map("business_profile_id") @db.Uuid
+  type              TransactionType
+  category          TransactionCategory @default(other)
+  amount            Decimal             @db.Decimal(18, 2)
+  paymentMethod     PaymentMethod       @map("payment_method")
+  bankAccountId     String?             @map("bank_account_id") @db.Uuid
+  customerName      String?             @map("customer_name")
+  description       String?
+  transactionDate   DateTime            @map("transaction_date") @db.Date
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  bankAccount     BankAccount?    @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  documents       Document[]
+  invoices        Invoice[]
+
+  @@map("transactions")
+}
+
+model Document {
+  id            String       @id @default(uuid()) @db.Uuid
+  transactionId String       @map("transaction_id") @db.Uuid
+  docType       DocumentType @map("doc_type")
+  fileUrl       String       @map("file_url")
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Invoice {
+  id            String        @id @default(uuid()) @db.Uuid
+  transactionId String        @map("transaction_id") @db.Uuid
+  invoiceNumber String        @map("invoice_number")
+  issuedDate    DateTime?     @map("issued_date") @db.Date
+  status        InvoiceStatus @default(draft)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+/// direction: "in" | "out" (sao kê) — giữ String để khớp CHECK SQL gốc
+model BankStatementLine {
+  id            String   @id @default(uuid()) @db.Uuid
+  bankAccountId String   @map("bank_account_id") @db.Uuid
+  amount        Decimal  @db.Decimal(18, 2)
+  direction     String
+  description   String?
+  postedAt      DateTime @map("posted_at") @db.Date
+  externalRef   String?  @map("external_ref")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+
+  @@map("bank_statement_lines")
+}

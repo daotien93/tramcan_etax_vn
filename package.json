@@ -1,0 +1,10 @@
+{
+  "name": "tramcan-etax",
+  "private": true,
+  "scripts": {
+    "dev:api": "npm run start:dev --prefix api",
+    "dev:web": "npm run dev --prefix web",
+    "build:api": "npm run build --prefix api",
+    "build:web": "npm run build --prefix web"
+  }
+}
