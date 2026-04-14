@@ -1,22 +1,26 @@
-import { Button, Layout, Menu, Space, Tag, theme } from 'antd'
+import { Button, Layout, Menu, Space, Tag, Tooltip, theme } from 'antd'
 import {
   AuditOutlined,
   DashboardOutlined,
   FileTextOutlined,
   LogoutOutlined,
+  MoonFilled,
+  MoonOutlined,
   SettingOutlined,
   SwapOutlined,
 } from '@ant-design/icons'
 import { useMemo } from 'react'
 import type { MenuProps } from 'antd'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useThemeMode } from '../context/ThemeModeContext'
 
 export function AppShell() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = theme.useToken()
   const { user, logout } = useAuth()
+  const { mode, toggleMode } = useThemeMode()
 
   const menuItems: MenuProps['items'] = useMemo(() => {
     const rest: MenuProps['items'] = [
@@ -36,26 +40,41 @@ export function AppShell() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Layout.Sider breakpoint="lg" collapsedWidth={64}>
-        <div
-          style={{
-            height: 48,
-            margin: 16,
-            color: token.colorTextLightSolid,
-            fontWeight: 600,
-            fontSize: 14,
-            lineHeight: '48px',
-            textAlign: 'center',
-          }}
-        >
-          TramCan & Tax Viet
-        </div>
+      <Layout.Sider
+        breakpoint="lg"
+        collapsedWidth={64}
+        style={{ background: token.colorBgContainer, borderRight: `1px solid ${token.colorBorderSecondary}` }}
+      >
+        <Link to="/dashboard" style={{ textDecoration: 'none' }}>
+          <div
+            style={{
+              height: 48,
+              margin: 16,
+              color: token.colorText,
+              fontWeight: 600,
+              fontSize: 14,
+              lineHeight: '48px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '0.7'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '1'
+            }}
+          >
+            TramCan & Tax Viet
+          </div>
+        </Link>
         <Menu
-          theme="dark"
+          theme="light"
           mode="inline"
           selectedKeys={[location.pathname]}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
+          style={{ background: token.colorBgContainer, borderRight: 'none' }}
         />
       </Layout.Sider>
       <Layout>
@@ -72,6 +91,13 @@ export function AppShell() {
         >
           <span>HKD — Thuế & chứng từ</span>
           <Space size="middle">
+            <Tooltip title={mode === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}>
+              <Button
+                type="text"
+                icon={mode === 'dark' ? <MoonFilled /> : <MoonOutlined />}
+                onClick={toggleMode}
+              />
+            </Tooltip>
             <Tag color={user?.role === 'admin' ? 'gold' : 'blue'}>
               {user?.username} · {user?.role === 'admin' ? 'Admin' : 'User'}
             </Tag>

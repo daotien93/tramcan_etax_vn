@@ -1,3 +1,8 @@
+body {
+  min-height: 100vh;
+  background: #f5f8ff;
+}
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;

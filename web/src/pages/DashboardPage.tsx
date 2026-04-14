@@ -143,40 +143,61 @@ export function DashboardPage() {
   const marginPct =
     totals.income > 0 ? Math.round((totals.profit / totals.income) * 1000) / 10 : 0
 
+  const pageStyle: CSSProperties = {
+    minHeight: '100vh',
+    padding: '28px 24px 40px',
+    backgroundColor: token.colorBgLayout,
+  }
+
   const cardSurface: CSSProperties = {
     borderRadius: token.borderRadiusLG,
-    border: `1px solid ${token.colorBorderSecondary}`,
-    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 2px 8px -2px rgba(0, 0, 0, 0.04)',
+    border: 'none',
+    backgroundColor: token.colorBgContainer,
+    boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)',
+  }
+
+  const headerCard: CSSProperties = {
+    borderRadius: token.borderRadiusLG,
+    border: '1px solid rgba(0, 0, 0, 0.06)',
+    backgroundColor: token.colorBgElevated,
+    boxShadow: '0 20px 40px rgba(15, 23, 42, 0.06)',
+  }
+
+  const hintTextStyle: CSSProperties = {
+    fontSize: 14,
+    color: token.colorTextSecondary,
   }
 
   return (
-    <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-      <Flex vertical gap="large">
-        {/* Page header */}
-        <Flex justify="space-between" align="flex-start" wrap="wrap" gap={16}>
-          <div>
-            <Typography.Title level={3} style={{ margin: 0, fontWeight: 600 }}>
-              Tổng quan tài chính
-            </Typography.Title>
-            <Typography.Text type="secondary" style={{ fontSize: 14 }}>
-              Theo dõi dòng tiền, thuế ước tính và cảnh báo tuân thủ — cập nhật theo sổ giao dịch.
-            </Typography.Text>
-          </div>
-          <Space align="center" wrap>
-            <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-              Phạm vi
-            </Typography.Text>
-            <Select
-              value={period}
-              onChange={setPeriod}
-              style={{ minWidth: 140 }}
-              options={[
-                { value: 'all', label: 'Toàn bộ dữ liệu' },
-                ...yearOptions.map((y) => ({ value: String(y), label: `Năm ${y}` })),
-              ]}
-            />
-          </Space>
-        </Flex>
+    <div style={pageStyle}>
+      <div style={{ maxWidth: 1440, margin: '0 auto' }}>
+        <Flex vertical gap="large">
+          <Card style={{ ...headerCard, marginBottom: 24, padding: 24 }} bodyStyle={{ padding: 0 }}>
+          <Flex justify="space-between" align="flex-start" wrap="wrap" gap={16}>
+            <div style={{ minWidth: 0 }}>
+              <Typography.Title level={3} style={{ margin: 0, fontWeight: 700 }}>
+                Tổng quan tài chính
+              </Typography.Title>
+              <Typography.Text style={hintTextStyle}>
+                Theo dõi dòng tiền, thuế ước tính và cảnh báo tuân thủ — cập nhật theo sổ giao dịch.
+              </Typography.Text>
+            </div>
+            <Space align="center" wrap>
+              <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                Phạm vi
+              </Typography.Text>
+              <Select
+                value={period}
+                onChange={setPeriod}
+                style={{ minWidth: 140 }}
+                options={[
+                  { value: 'all', label: 'Toàn bộ dữ liệu' },
+                  ...yearOptions.map((y) => ({ value: String(y), label: `Năm ${y}` })),
+                ]}
+              />
+            </Space>
+          </Flex>
+        </Card>
 
         {criticalAlerts.length > 0 && (
           <Alert
@@ -271,7 +292,7 @@ export function DashboardPage() {
                 </Space>
               }
               extra={<Link to="/transactions">Chi tiết giao dịch</Link>}
-              styles={{ body: { paddingTop: 8 } }}
+              bodyStyle={{ paddingTop: 8 }}
               style={cardSurface}
             >
               {chartData.length === 0 ? (
@@ -532,6 +553,7 @@ export function DashboardPage() {
         </Row>
       </Flex>
     </div>
+  </div>
   )
 }
 
@@ -550,12 +572,25 @@ function KpiCard({ title, value, formatter, icon, accent, hint, valueStyle, card
   const { token } = theme.useToken()
 
   return (
-    <Card bordered={false} style={{ ...cardStyle, height: '100%' }} styles={{ body: { padding: 20 } }}>
+    <Card
+      bordered={false}
+      style={{ ...cardStyle, height: '100%', overflow: 'hidden' }}
+      bodyStyle={{ padding: 20 }}
+    >
+      <div
+        style={{
+          height: 4,
+          width: 56,
+          borderRadius: 999,
+          background: accent,
+          marginBottom: 18,
+        }}
+      />
       <Flex justify="space-between" align="flex-start" gap={12}>
         <div style={{ minWidth: 0 }}>
           <Typography.Text
             type="secondary"
-            style={{ fontSize: 13, display: 'block', marginBottom: 8 }}
+            style={{ fontSize: 13, display: 'block', marginBottom: 10 }}
           >
             {title}
           </Typography.Text>
@@ -563,19 +598,19 @@ function KpiCard({ title, value, formatter, icon, accent, hint, valueStyle, card
             value={value}
             formatter={formatter}
             valueStyle={{
-              fontSize: 22,
-              fontWeight: 600,
-              lineHeight: 1.25,
+              fontSize: 24,
+              fontWeight: 700,
+              lineHeight: 1.1,
               ...valueStyle,
             }}
           />
           <Typography.Paragraph
             type="secondary"
             style={{
-              fontSize: 12,
-              marginTop: 10,
+              fontSize: 13,
+              marginTop: 12,
               marginBottom: 0,
-              lineHeight: 1.45,
+              lineHeight: 1.6,
             }}
           >
             {hint}
@@ -584,15 +619,15 @@ function KpiCard({ title, value, formatter, icon, accent, hint, valueStyle, card
         <div
           style={{
             flexShrink: 0,
-            width: 48,
-            height: 48,
+            width: 52,
+            height: 52,
             borderRadius: token.borderRadiusLG,
-            background: `${accent}18`,
+            background: `${accent}20`,
             color: accent,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 22,
+            fontSize: 24,
           }}
         >
           {icon}
