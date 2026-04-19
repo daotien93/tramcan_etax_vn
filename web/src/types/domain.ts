@@ -4,6 +4,10 @@ export type TransactionCategory = 'service' | 'trading' | 'other'
 
 export type PaymentMethod = 'bank' | 'cash'
 
+export type PaymentStatus = 'paid' | 'unpaid'
+
+export type TaxRate = '0' | '5' | '10' | 'na'
+
 export type DocumentType = 'contract' | 'invoice' | 'receipt'
 
 export type InvoiceStatus = 'draft' | 'issued' | 'cancelled'
@@ -22,8 +26,15 @@ export interface Transaction {
   category: TransactionCategory
   amount: number
   paymentMethod: PaymentMethod
+  paymentStatus?: PaymentStatus
+  vatRate?: TaxRate
+  vatAmount?: number
   bankAccountId: string | null
   customerName: string
+  customerTaxCode?: string
+  customerIdNumber?: string
+  sellerIdNumber?: string
+  transactionLocation?: string
   description: string
   transactionDate: string
 }

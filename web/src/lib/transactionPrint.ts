@@ -9,16 +9,17 @@ const HIGH = 20_000_000
 
 export type PrintFlowFilter = 'all' | 'income' | 'expense'
 
-export type PrintPeriodFilter = 'all' | 'today' | 'week' | 'month'
+export type PrintPeriodFilter = 'all' | 'today' | 'week' | 'month' | 'custom'
 
 export type TransactionPrintFilters = {
   flow: PrintFlowFilter
   period: PrintPeriodFilter
   /** Chỉ giao dịch có số tiền > 20.000.000 ₫ */
   largeAmountOnly: boolean
+  customRange?: [string, string] | null
 }
 
-function inPeriod(isoDate: string, period: PrintPeriodFilter): boolean {
+function inPeriod(isoDate: string, period: PrintPeriodFilter, customRange?: [string, string] | null): boolean {
   if (period === 'all') return true
   const d = dayjs(isoDate)
   const now = dayjs()
@@ -34,6 +35,11 @@ function inPeriod(isoDate: string, period: PrintPeriodFilter): boolean {
   if (period === 'month') {
     return d.isSame(now, 'month')
   }
+  if (period === 'custom') {
+    if (!customRange || !customRange[0] || !customRange[1]) return true
+    const ds = d.format('YYYY-MM-DD')
+    return ds >= customRange[0] && ds <= customRange[1]
+  }
   return true
 }
 
@@ -43,7 +49,7 @@ export function filterTransactionsForPrint(
 ): Transaction[] {
   return list.filter((t) => {
     if (f.flow !== 'all' && t.type !== f.flow) return false
-    if (!inPeriod(t.transactionDate, f.period)) return false
+    if (!inPeriod(t.transactionDate, f.period, f.customRange)) return false
     if (f.largeAmountOnly && t.amount <= HIGH) return false
     return true
   })
@@ -63,8 +69,15 @@ function flowLabel(flow: PrintFlowFilter) {
   return 'Tất cả (thu & chi)'
 }
 
-function periodLabel(period: PrintPeriodFilter) {
-  const map: Record<PrintPeriodFilter, string> = {
+function periodLabel(period: PrintPeriodFilter, customRange?: [string, string] | null) {
+  if (period === 'custom') {
+    if (customRange && customRange[0] && customRange[1]) {
+      return `Từ ${dayjs(customRange[0]).format('DD/MM/YYYY')} đến ${dayjs(customRange[1]).format('DD/MM/YYYY')}`
+    }
+    return 'Khoảng ngày tùy chọn'
+  }
+
+  const map: Record<Exclude<PrintPeriodFilter, 'custom'>, string> = {
     all: 'Toàn bộ thời gian',
     today: 'Trong ngày (hôm nay)',
     week: 'Trong tuần (tuần ISO hiện tại)',
@@ -138,7 +151,7 @@ export function buildTransactionPrintHtml(
   <h1>Báo cáo giao dịch</h1>
   <div class="meta">
     <div><strong>Phân loại dòng tiền:</strong> ${escapeHtml(flowLabel(filters.flow))}</div>
-    <div><strong>Thời gian:</strong> ${escapeHtml(periodLabel(filters.period))}</div>
+    <div><strong>Thời gian:</strong> ${escapeHtml(periodLabel(filters.period, filters.customRange))}</div>
     <div><strong>Lọc số tiền:</strong> ${filters.largeAmountOnly ? `Chỉ giao dịch &gt; ${HIGH.toLocaleString('vi-VN')} ₫` : 'Không giới hạn'}</div>
     <div><strong>In lúc:</strong> ${escapeHtml(dayjs().format('DD/MM/YYYY HH:mm'))}</div>
     <div><strong>Số dòng:</strong> ${sorted.length}</div>

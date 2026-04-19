@@ -1,15 +1,17 @@
-import { Button, Layout, Menu, Space, Tag, Tooltip, theme } from 'antd'
+import { Button, Dropdown, Form, Input, Layout, Menu, Modal, Space, Tooltip, message, theme } from 'antd'
 import {
   AuditOutlined,
   DashboardOutlined,
   FileTextOutlined,
+  LockOutlined,
   LogoutOutlined,
   MoonFilled,
   MoonOutlined,
   SettingOutlined,
   SwapOutlined,
+  UserOutlined,
 } from '@ant-design/icons'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { MenuProps } from 'antd'
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -21,6 +23,38 @@ export function AppShell() {
   const { token } = theme.useToken()
   const { user, logout } = useAuth()
   const { mode, toggleMode } = useThemeMode()
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false)
+  const [passwordForm] = Form.useForm<{ currentPassword: string; newPassword: string; confirmPassword: string }>()
+  const [passwordLoading, setPasswordLoading] = useState(false)
+
+  const handleChangePassword = async () => {
+    try {
+      setPasswordLoading(true)
+      const values = await passwordForm.validateFields()
+
+      // Demo: Check current password against hardcoded values
+      const DEMO_USERS: Record<string, string> = {
+        admin: 'admin123',
+        user: 'user123',
+      }
+      const currentCorrect = DEMO_USERS[user?.username || ''] === values.currentPassword
+
+      if (!currentCorrect) {
+        message.error('Mật khẩu hiện tại không đúng')
+        return
+      }
+
+      // Simulate password change
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      message.success('Đổi mật khẩu thành công')
+      setPasswordModalOpen(false)
+      passwordForm.resetFields()
+    } catch (err) {
+      // Form validation errors are handled by Form component
+    } finally {
+      setPasswordLoading(false)
+    }
+  }
 
   const menuItems: MenuProps['items'] = useMemo(() => {
     const rest: MenuProps['items'] = [
@@ -37,6 +71,43 @@ export function AppShell() {
     }
     return rest
   }, [user?.role])
+
+  const userMenuItems: MenuProps['items'] = useMemo(
+    () => [
+      {
+        key: 'user-info',
+        disabled: true,
+        icon: <UserOutlined />,
+        label: (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4 }}>
+              {user?.username}
+            </div>
+            <div style={{ fontSize: 11, color: '#8c8c8c' }}>
+              {user?.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
+            </div>
+          </div>
+        ),
+      },
+      { type: 'divider' },
+      {
+        key: 'change-password',
+        icon: <LockOutlined />,
+        label: 'Đổi mật khẩu',
+        onClick: () => setPasswordModalOpen(true),
+      },
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: 'Đăng xuất',
+        onClick: () => {
+          logout()
+          navigate('/login', { replace: true })
+        },
+      },
+    ],
+    [user, logout, navigate],
+  )
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -98,25 +169,85 @@ export function AppShell() {
                 onClick={toggleMode}
               />
             </Tooltip>
-            <Tag color={user?.role === 'admin' ? 'gold' : 'blue'}>
-              {user?.username} · {user?.role === 'admin' ? 'Admin' : 'User'}
-            </Tag>
-            <Button
-              type="text"
-              icon={<LogoutOutlined />}
-              onClick={() => {
-                logout()
-                navigate('/login', { replace: true })
-              }}
-            >
-              Đăng xuất
-            </Button>
+            <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>
+              <Button type="text" icon={<UserOutlined />}>
+                Admin
+              </Button>
+            </Dropdown>
           </Space>
         </Layout.Header>
         <Layout.Content style={{ margin: 24 }}>
           <Outlet />
         </Layout.Content>
       </Layout>
+
+      <Modal
+        title="Đổi mật khẩu"
+        open={passwordModalOpen}
+        onOk={handleChangePassword}
+        onCancel={() => {
+          setPasswordModalOpen(false)
+          passwordForm.resetFields()
+        }}
+        okText="Cập nhật"
+        cancelText="Hủy"
+        confirmLoading={passwordLoading}
+        width={420}
+        destroyOnClose
+      >
+        <Form
+          form={passwordForm}
+          layout="vertical"
+          size="large"
+          style={{ marginTop: 24 }}
+        >
+          <Form.Item
+            name="currentPassword"
+            label="Mật khẩu hiện tại"
+            rules={[
+              { required: true, message: 'Nhập mật khẩu hiện tại' },
+              { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' },
+            ]}
+          >
+            <Input.Password placeholder="Nhập mật khẩu hiện tại" />
+          </Form.Item>
+          <Form.Item
+            name="newPassword"
+            label="Mật khẩu mới"
+            rules={[
+              { required: true, message: 'Nhập mật khẩu mới' },
+              { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('currentPassword') !== value) {
+                    return Promise.resolve()
+                  }
+                  return Promise.reject(new Error('Mật khẩu mới phải khác mật khẩu cũ'))
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Nhập mật khẩu mới" />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="Xác nhận mật khẩu mới"
+            rules={[
+              { required: true, message: 'Xác nhận mật khẩu mới' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve()
+                  }
+                  return Promise.reject(new Error('Xác nhận mật khẩu không khớp'))
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Xác nhận mật khẩu mới" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Layout>
   )
 }
